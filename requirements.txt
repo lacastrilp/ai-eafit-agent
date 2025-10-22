@@ -1,6 +1,6 @@
-langchain
-langchain-groq
-langchain-community
+langchain>=0.1.14
+langchain-community>=0.0.14
+langchain-groq>=0.0.5
 langchain-core
 python-telegram-bot
 streamlit
@@ -8,3 +8,4 @@ supabase
 python-dotenv
 tavily-python # Opcional, para b´usqueda
 pandas
+
