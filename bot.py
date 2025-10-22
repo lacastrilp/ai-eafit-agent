@@ -1,61 +1,56 @@
 import os
+import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from dotenv import load_dotenv
 
-# Import our logic
 from agent_core import invoke_agent
 from memory_manager import get_chat_history, add_message_to_history
 
-# Load environment variables
+# Cargar variables de entorno
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
-# Function for the /start command
+# Comando /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("¡Hola! Soy tu agente IA. Pregúntame algo.")
+    await update.message.reply_text("¡Hola! Soy tu agente IA 🤖. Pregúntame algo para empezar.")
 
-# Main function to handle messages
+# Manejo de mensajes
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     user_message = update.message.text
 
-    # 1. Save the user's message in memory
+    # Guardar mensaje del usuario
     add_message_to_history(user_id, "user", user_message)
 
-    # 2. Retrieve chat history (including the new message)
+    # Recuperar historial
     chat_history = get_chat_history(user_id)
 
-    # 3. Invoke the agent (the brain)
+    # Mostrar acción de "escribiendo..."
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+
+    # Invocar al agente (de forma no bloqueante)
     try:
-        # This may take a few seconds; Telegram might show "typing..."
-        await context.bot.send_chat_action(
-            chat_id=update.effective_chat.id,
-            action="typing"
-        )
-
-        response = invoke_agent(user_message, chat_history)
-        ai_message = response["output"]
-
+        ai_message = await asyncio.to_thread(invoke_agent, user_message, chat_history)
     except Exception as e:
-        print(f"Error invoking the agent: {e}")
-        ai_message = "Lo siento, tuve un error al procesar tu solicitud."
+        print(f"Error invocando al agente: {e}")
+        ai_message = "⚠️ Lo siento, hubo un error al procesar tu solicitud."
 
-    # 4. Save the AI's response in memory
+    # Guardar respuesta del agente
     add_message_to_history(user_id, "ai", ai_message)
 
-    # 5. Send the response to the user
+    # Enviar respuesta al usuario
     await update.message.reply_text(ai_message)
 
 def main():
-    print("Iniciando el bot...")
+    print("🚀 Iniciando el bot...")
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
-    # Add handlers
+    # Handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    # Run the bot
+    # Ejecutar bot
     application.run_polling()
 
 if __name__ == "__main__":
