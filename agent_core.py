@@ -9,7 +9,7 @@ load_dotenv()
 
 # 2. Inicializar el modelo Groq Llama 3
 llm = ChatGroq(
-    model="llama3-8b-8192",
+    model="llama-3.1-8b-instant",  # ✅ modelo actualizado
     temperature=0.3
 )
 
@@ -48,5 +48,7 @@ def invoke_agent(user_input, chat_history_messages):
         })
         return response.strip()
     except Exception as e:
-        print(f"[Error invoke_agent]: {e}")
+        import traceback
+        print("[Error invoke_agent]:", e)
+        traceback.print_exc()  # 🔥 esto imprime el stack completo
         return "⚠️ Ocurrió un error al procesar tu solicitud."
